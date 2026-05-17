@@ -1,5 +1,7 @@
 from sqlalchemy import Column, Integer, String
 from app.database import Base, engine
+from app.models.conversation import Conversation
+
 # 数据库模型
 class User(Base):
     __tablename__ = "users"
@@ -7,7 +9,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     username = Column(String)
     hashed_password = Column(String)
+    role = Column(String, default="user")
 
 Base.metadata.create_all(bind=engine)
-from app.models.conversation import Conversation
 Conversation.metadata.create_all(bind=engine)
