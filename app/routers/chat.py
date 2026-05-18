@@ -23,17 +23,27 @@ def chat(request: MessageRequest, token: str = Depends(oauth2_scheme), db: Sessi
         email: str = payload.get("sub")
     except JWTError:
         raise HTTPException(status_code=401, detail="无效凭证")
-        # 用邮箱查到真实用户
+
     from app.models.user import User
     user = db.query(User).filter(User.email == email).first()
 
+    # 先存用户消息
     user_msg = Conversation(user_id=user.id, role="user", content=request.message)
     db.add(user_msg)
     db.commit()
 
+    # 查询历史对话
+    history = db.query(Conversation).filter(
+        Conversation.user_id == user.id
+    ).order_by(Conversation.id).all()
+
+    # 构建带上下文的消息列表
+    messages = [{"role": c.role, "content": c.content} for c in history]
+
+    # 调用 DeepSeek API
     req_data = json.dumps({
         "model": "deepseek-chat",
-        "messages": [{"role": "user", "content": request.message}]
+        "messages": messages
     }).encode()
 
     req = urllib.request.Request(
@@ -48,12 +58,14 @@ def chat(request: MessageRequest, token: str = Depends(oauth2_scheme), db: Sessi
         result = json.loads(resp.read())
 
     reply = result["choices"][0]["message"]["content"]
-#存ai回复用真实user.id
+
     ai_msg = Conversation(user_id=user.id, role="assistant", content=reply)
     db.add(ai_msg)
     db.commit()
 
     return {"reply": reply}
+
+
 @router.get("/chat/history")
 def get_history(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
@@ -64,6 +76,6 @@ def get_history(token: str = Depends(oauth2_scheme), db: Session = Depends(get_d
 
     from app.models.user import User
     user = db.query(User).filter(User.email == email).first()
-#只查当前用户的记录
+
     history = db.query(Conversation).filter(Conversation.user_id == user.id).all()
     return [{"role": c.role, "content": c.content, "time": c.created_at} for c in history]
