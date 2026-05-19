@@ -6,4 +6,5 @@ from app.routers import auth, chat
 app.include_router(chat.router)
 from app.routers import auth, chat, admin
 app.include_router(admin.router)
-
+from app.routers import auth, chat, admin, session
+app.include_router(session.router)

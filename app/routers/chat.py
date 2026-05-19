@@ -14,7 +14,7 @@ router = APIRouter()
 
 class MessageRequest(BaseModel):
     message: str
-
+    session_id: int
 
 @router.post("/chat")
 def chat(request: MessageRequest, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -28,13 +28,14 @@ def chat(request: MessageRequest, token: str = Depends(oauth2_scheme), db: Sessi
     user = db.query(User).filter(User.email == email).first()
 
     # 先存用户消息
-    user_msg = Conversation(user_id=user.id, role="user", content=request.message)
+    user_msg = Conversation(user_id=user.id, session_id=request.session_id,role="user", content=request.message)
     db.add(user_msg)
     db.commit()
 
     # 查询历史对话
     history = db.query(Conversation).filter(
-        Conversation.user_id == user.id
+        Conversation.user_id == user.id,
+        Conversation.session_id == request.session_id
     ).order_by(Conversation.id).all()
 
     # 构建带上下文的消息列表
@@ -59,7 +60,7 @@ def chat(request: MessageRequest, token: str = Depends(oauth2_scheme), db: Sessi
 
     reply = result["choices"][0]["message"]["content"]
 
-    ai_msg = Conversation(user_id=user.id, role="assistant", content=reply)
+    ai_msg = Conversation(user_id=user.id, session_id=request.session_id,role="assistant", content=reply)
     db.add(ai_msg)
     db.commit()
 

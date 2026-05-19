@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String
 from app.database import Base, engine
 from app.models.conversation import Conversation
+from app.models.session import Session as SessionModel
 
 # 数据库模型
 class User(Base):
@@ -13,3 +14,4 @@ class User(Base):
 
 Base.metadata.create_all(bind=engine)
 Conversation.metadata.create_all(bind=engine)
+SessionModel.metadata.create_all(bind=engine)

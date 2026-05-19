@@ -1,16 +1,14 @@
 # Warning:Let you always trust youself.
 # lesson:vipPython
 # user:April 
-# starting time:2026/5/15 17:21
+# starting time:2026/5/19 16:45
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from app.database import Base
 
-class Conversation(Base):
-    __tablename__ = "conversations"
+class Session(Base):
+    __tablename__ = "sessions"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    session_id = Column(Integer,ForeignKey("sessions.id"))
-    role = Column(String)      # "user" 或 "assistant"
-    content = Column(String)   # 消息内容
+    title = Column(String, default="新对话")
     created_at = Column(DateTime, default=func.now())
