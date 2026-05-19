@@ -31,6 +31,37 @@ def chat(request: MessageRequest, token: str = Depends(oauth2_scheme), db: Sessi
     user_msg = Conversation(user_id=user.id, session_id=request.session_id,role="user", content=request.message)
     db.add(user_msg)
     db.commit()
+    # 功能10：如果是第一条消息，自动生成会话标题
+    msg_count = db.query(Conversation).filter(
+        Conversation.user_id == user.id,
+        Conversation.session_id == request.session_id
+    ).count()
+
+    if msg_count == 1:  # 刚存入的这条是第一条
+        title_req_data = json.dumps({
+            "model": "deepseek-chat",
+            "messages": [
+                {"role": "user", "content": f"请用5个字以内概括这句话的主题，只返回标题不要其他内容：{request.message}"}]
+        }).encode()
+
+        title_req = urllib.request.Request(
+            "https://api.deepseek.com/chat/completions",
+            data=title_req_data,
+            headers={
+                "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+                "Content-Type": "application/json"
+            }
+        )
+        with urllib.request.urlopen(title_req, timeout=30) as title_resp:
+            title_result = json.loads(title_resp.read())
+
+        title = title_result["choices"][0]["message"]["content"]
+
+        from app.models.session import Session as SessionModel
+        session = db.query(SessionModel).filter(SessionModel.id == request.session_id).first()
+        session.title = title
+        db.commit()
+
 
     # 查询历史对话
     history = db.query(Conversation).filter(
