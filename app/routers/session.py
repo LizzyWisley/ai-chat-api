@@ -13,8 +13,6 @@ from app.core.security import oauth2_scheme, SECRET_KEY, ALGORITHM
 from app.models.user import User
 
 router = APIRouter()
-
-
 # 新建会话
 @router.post("/sessions")
 def create_session(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):

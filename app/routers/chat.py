@@ -20,12 +20,24 @@ class MessageRequest(BaseModel):
 def chat(request: MessageRequest, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        #隔离用户的核心，从token拿邮箱，sub是JWT标准字段，subject
         email: str = payload.get("sub")
     except JWTError:
         raise HTTPException(status_code=401, detail="无效凭证")
 
     from app.models.user import User
+    #隔离用户的核心：用邮箱查真实的用户，这是用了ORM框架
     user = db.query(User).filter(User.email == email).first()
+#新增校验：查用户之后存消息之前，校验session_id是否属于当前用户
+    from app.models.session import Session as SessionModel
+
+    session = db.query(SessionModel).filter(
+        SessionModel.id == request.session_id,
+        SessionModel.user_id == user.id
+    ).first()
+
+    if not session:
+        raise HTTPException(status_code=403, detail="无权访问此会话")
 
     # 先存用户消息
     user_msg = Conversation(user_id=user.id, session_id=request.session_id,role="user", content=request.message)
@@ -36,7 +48,7 @@ def chat(request: MessageRequest, token: str = Depends(oauth2_scheme), db: Sessi
         Conversation.user_id == user.id,
         Conversation.session_id == request.session_id
     ).count()
-
+#存消息
     if msg_count == 1:  # 刚存入的这条是第一条
         title_req_data = json.dumps({
             "model": "deepseek-chat",
