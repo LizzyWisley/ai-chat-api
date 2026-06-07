@@ -2,16 +2,16 @@
 # lesson:vipPython
 # user:April 
 # starting time:2026/6/5 18:35
-from langchain_openai import ChatOpenAI
-from langchain.tools import tool
-from langgraph.prebuilt import create_react_agent
+from langchain_openai import ChatOpenAI #大脑
+from langchain.tools import tool #工具
+from langgraph.prebuilt import create_react_agent #控制器
+
 import os
-
-
 def create_agent(db, user_id: int, session_id: int):
     # 工具一：查询对话历史
     @tool
     def get_history() -> str:
+        ##下面这一行就是docstring，给工具，给框架看的
         """查询当前用户在当前会话里的历史对话记录"""
         from app.models.conversation import Conversation
         records = db.query(Conversation).filter(

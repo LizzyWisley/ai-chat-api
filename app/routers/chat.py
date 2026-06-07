@@ -74,8 +74,10 @@ def chat(request: MessageRequest, token: str = Depends(oauth2_scheme), db: Sessi
     try:
         from app.core.agent import create_agent
         agent = create_agent(db, user.id, request.session_id)
+        print(f"【Agent 开始】用户消息: {request.message}")  # 最简单的print方法
         result = agent.invoke({"messages": [{"role": "user", "content": request.message}]})
         reply = result["messages"][-1].content
+        print(f"【Agent 结束】回复: {reply}")  # 最简单print
     except Exception as e:
         print(f"Agent 调用失败: {e}")
         raise HTTPException(status_code=500, detail=f"AI 回复生成失败: {str(e)}")
