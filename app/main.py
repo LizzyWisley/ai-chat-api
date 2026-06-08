@@ -8,3 +8,5 @@ from app.routers import auth, chat, admin
 app.include_router(admin.router)
 from app.routers import auth, chat, admin, session
 app.include_router(session.router)
+from app.routers import auth, chat, admin, session, document
+app.include_router(document.router)
